@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Finder for Alex</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background: #f5f6fa;
+        color: #2f3640;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      header {
+        background-color: #4b7bec;
+        color: white;
+        text-align: center;
+        padding: 1.5rem 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      header h1 {
+        font-size: 1.8rem;
+        letter-spacing: 1px;
+      }
+
+      .search-box {
+        margin-top: 1rem;
+      }
+
+      .search-box input {
+        width: 60%;
+        max-width: 400px;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+
+      .search-box button {
+        padding: 10px 15px;
+        border: none;
+        background-color: #273c75;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-left: 5px;
+        font-size: 16px;
+      }
+
+      .search-box button:hover {
+        background-color: #192a56;
+      }
+
+      #bookList {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 30px;
+        flex-grow: 1;
+      }
+
+      .book-card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        text-align: center;
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+      }
+
+      .book-card:hover {
+        transform: scale(1.03);
+      }
+
+      .book-card img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        border-radius: 6px;
+        background-color: #f0f0f0;
+      }
+
+      .book-title {
+        font-weight: 600;
+        margin: 10px 0 5px;
+      }
+
+      .book-author {
+        color: #555;
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+
+      .book-year,
+      .book-publisher {
+        color: #888;
+        font-size: 13px;
+      }
+
+      footer {
+        background-color: #4b7bec;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      /* Popup Modal */
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+      }
+
+      .modal-content {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        width: 90%;
+        max-width: 600px;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-content img {
+        width: 180px;
+        height: 260px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-bottom: 15px;
+      }
+
+      .modal h2 {
+        color: #273c75;
+        margin-bottom: 10px;
+      }
+
+      .modal p {
+        margin-bottom: 10px;
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: #e84118;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .close-btn:hover {
+        background: #c23616;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>📚 Book Finder for Alex</h1>
+      <p>Find books easily by title or author using Open Library</p>
+      <div class="search-box">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search books by title or author..."
+        />
+        <button id="searchBtn">Search</button>
+      </div>
+    </header>
+
+    <main id="bookList"></main>
+
+    <footer>
+      <p>Made with ❤️ for Alex - Powered by Open Library API</p>
+    </footer>
+
+    <!-- Modal Popup -->
+    <div class="modal" id="bookModal">
+      <div class="modal-content" id="modalContent">
+        <button class="close-btn" id="closeModal">Close ✖</button>
+        <img src="" id="modalCover" alt="Book Cover" />
+        <h2 id="modalTitle"></h2>
+        <p id="modalAuthor"></p>
+        <p id="modalPublisher"></p>
+        <p id="modalYear"></p>
+        <p id="modalDescription"></p>
+      </div>
+    </div>
+
+    <script>
+      const searchBtn = document.getElementById("searchBtn");
+      const searchInput = document.getElementById("searchInput");
+      const bookList = document.getElementById("bookList");
+
+      const modal = document.getElementById("bookModal");
+      const closeModal = document.getElementById("closeModal");
+      const modalCover = document.getElementById("modalCover");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalAuthor = document.getElementById("modalAuthor");
+      const modalPublisher = document.getElementById("modalPublisher");
+      const modalYear = document.getElementById("modalYear");
+      const modalDescription = document.getElementById("modalDescription");
+
+      searchBtn.addEventListener("click", getBooks);
+      searchInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") getBooks();
+      });
+
+      closeModal.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      async function getBooks() {
+        const query = searchInput.value.trim();
+        if (!query) {
+          bookList.innerHTML =
+            "<p style='text-align:center;'>Please enter a search term.</p>";
+          return;
+        }
+
+        const url = `https://openlibrary.org/search.json?title=${encodeURIComponent(
+          query
+        )}`;
+
+        bookList.innerHTML = "<p style='text-align:center;'>Loading...</p>";
+
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          displayBooks(data.docs);
+        } catch (error) {
+          bookList.innerHTML =
+            "<p style='text-align:center;'>Something went wrong. Please try again.</p>";
+          console.error(error);
+        }
+      }
+
+      function displayBooks(books = []) {
+        if (!books || books.length === 0) {
+          bookList.innerHTML =
+            "<p style='text-align:center;'>No books found.</p>";
+          return;
+        }
+
+        bookList.innerHTML = books
+          .slice(0, 20)
+          .map((book, index) => {
+            const coverId = book.cover_i;
+            const coverUrl = coverId
+              ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`
+              : "https://via.placeholder.com/200x250?text=No+Cover";
+            const title = book.title || "No Title";
+            const author = book.author_name
+              ? book.author_name.join(", ")
+              : "Unknown Author";
+            const year = book.first_publish_year || "—";
+            const publisher = book.publisher ? book.publisher[0] : "—";
+
+            return `
+          <div class="book-card" onclick="showBookDetails(${encodeURIComponent(
+            JSON.stringify(book)
+          )})">
+            <img src="${coverUrl}" alt="${title}">
+            <div class="book-title">${title}</div>
+            <div class="book-author">👤 ${author}</div>
+            <div class="book-year">📅 ${year}</div>
+            <div class="book-publisher">🏢 ${publisher}</div>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      function showBookDetails(bookData) {
+        const book = JSON.parse(decodeURIComponent(bookData));
+        const coverId = book.cover_i;
+        const coverUrl = coverId
+          ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+          : "https://via.placeholder.com/200x250?text=No+Cover";
+
+        modalCover.src = coverUrl;
+        modalTitle.textContent = book.title || "No Title";
+        modalAuthor.textContent =
+          "👤 " +
+          (book.author_name ? book.author_name.join(", ") : "Unknown Author");
+        modalPublisher.textContent =
+          "🏢 " + (book.publisher ? book.publisher[0] : "—");
+        modalYear.textContent = "📅 " + (book.first_publish_year || "—");
+        modalDescription.textContent = book.subject
+          ? "📖 Topics: " + book.subject.slice(0, 5).join(", ")
+          : "No description available.";
+
+        modal.style.display = "flex";
+      }
+    </script>
+  </body>
+</html>
