@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Finder</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f5f6fa;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: #4b7bec;
+      color: white;
+      text-align: center;
+      padding: 1.2rem 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .search-box {
+      margin-top: 1rem;
+    }
+
+    .search-box input {
+      width: 60%;
+      max-width: 400px;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .search-box button {
+      padding: 10px 15px;
+      border: none;
+      background-color: #2d98da;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+
+    .search-box button:hover {
+      background-color: #3867d6;
+    }
+
+    #bookList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      flex-grow: 1;
+    }
+
+    .book-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 15px;
+      text-align: center;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .book-card:hover {
+      transform: scale(1.03);
+    }
+
+    .book-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+
+    .book-title {
+      font-weight: bold;
+      margin: 10px 0 5px;
+    }
+
+    .book-author {
+      color: #555;
+      font-size: 14px;
+    }
+
+    footer {
+      background-color: #4b7bec;
+      color: white;
+      text-align: center;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📚 Book Finder</h1>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search books by title or author..." />
+      <button id="searchBtn">Search</button>
+    </div>
+  </header>
+
+  <main id="bookList"></main>
+
+  <footer>
+    <p>Made with ❤️ by You</p>
+  </footer>
+
+  <script>
+    const searchBtn = document.getElementById("searchBtn");
+    const searchInput = document.getElementById("searchInput");
+    const bookList = document.getElementById("bookList");
+
+    searchBtn.addEventListener("click", getBooks);
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") getBooks();
+    });
+
+    async function getBooks() {
+      const query = searchInput.value.trim();
+      if (!query) {
+        bookList.innerHTML = "<p>Please enter a search term.</p>";
+        return;
+      }
+
+      const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12`;
+
+      bookList.innerHTML = "<p>Loading...</p>";
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        displayBooks(data.items);
+      } catch (error) {
+        bookList.innerHTML = "<p>Something went wrong. Please try again.</p>";
+        console.error(error);
+      }
+    }
+
+    function displayBooks(books = []) {
+      if (!books || books.length === 0) {
+        bookList.innerHTML = "<p>No books found.</p>";
+        return;
+      }
+
+      bookList.innerHTML = books
+        .map(book => {
+          const info = book.volumeInfo;
+          const thumbnail = info.imageLinks?.thumbnail || "https://via.placeholder.com/150x220?text=No+Image";
+          const title = info.title || "No Title";
+          const authors = info.authors ? info.authors.join(", ") : "Unknown Author";
+
+          return `
+            <div class="book-card">
+              <img src="${thumbnail}" alt="${title}">
+              <div class="book-title">${title}</div>
+              <div class="book-author">${authors}</div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+  </script>
+</body>
+</html>
